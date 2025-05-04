@@ -3,72 +3,67 @@ package:
   name: bitcoin_analytics
   version: v0.1.0
   url: https://github.com/PaulieB14/bitcoin-substreams-analytics
-  doc: Bitcoin analytics extracted from the blockchain for ClickHouse analytics
+  doc: Bitcoin blockchain analytics framework using Substreams
 
 imports:
-  bitcoin: https://github.com/streamingfast/firehose-bitcoin/releases/download/v1.0.0/bitcoin-v1.0.0.spkg
+  bitcoin: https://github.com/streamingfast/substreams-bitcoin/releases/download/v0.1.1/substreams-bitcoin-v0.1.1.spkg
 
 protobuf:
   files:
-    - analytics.proto
+    - proto/analytics.proto
   importPaths:
     - ./proto
 
 binaries:
   default:
     type: wasm/rust-v1
-    file: target/wasm32-unknown-unknown/release/substreams_bitcoin_analytics.wasm
+    file: ./target/wasm32-unknown-unknown/release/substreams_bitcoin_analytics.wasm
 
 modules:
-  - name: map_block_metrics
+  - name: map_events
     kind: map
     initialBlock: 0
     inputs:
       - source: sf.bitcoin.type.v1.Block
     output:
-      type: proto:bitcoin.analytics.v1.BlockMetrics
+      type: bitcoin.analytics.v1.Events
 
-  - name: map_transaction_metrics
+  - name: map_block_stats
     kind: map
     initialBlock: 0
     inputs:
       - source: sf.bitcoin.type.v1.Block
     output:
-      type: proto:bitcoin.analytics.v1.TransactionMetrics
+      type: bitcoin.analytics.v1.BlockStats
 
-  - name: map_address_activity
+  - name: map_transaction_stats
     kind: map
     initialBlock: 0
     inputs:
       - source: sf.bitcoin.type.v1.Block
     output:
-      type: proto:bitcoin.analytics.v1.AddressActivity
+      type: bitcoin.analytics.v1.TransactionStats
 
-  - name: store_daily_metrics
-    kind: store
-    initialBlock: 0
-    updatePolicy: set
-    valueType: proto:bitcoin.analytics.v1.NetworkDailyMetrics
-    inputs:
-      - map: map_block_metrics
-      - map: map_transaction_metrics
-
-  - name: map_aggregate_daily_metrics
+  - name: map_address_stats
     kind: map
     initialBlock: 0
     inputs:
-      - store: store_daily_metrics
-        mode: deltas
+      - source: sf.bitcoin.type.v1.Block
     output:
-      type: proto:bitcoin.analytics.v1.NetworkDailyMetrics
+      type: bitcoin.analytics.v1.AddressStats
 
-  - name: db_out
+  - name: map_utxo_stats
     kind: map
     initialBlock: 0
     inputs:
-      - map: map_block_metrics
-      - map: map_transaction_metrics
-      - map: map_address_activity
-      - map: map_aggregate_daily_metrics
+      - source: sf.bitcoin.type.v1.Block
     output:
-      type: proto:bitcoin.analytics.v1.DatabaseChanges
+      type: bitcoin.analytics.v1.UTXOStats
+
+  - name: map_mempool_stats
+    kind: map
+    initialBlock: 0
+    inputs:
+      - source: sf.bitcoin.type.v1.Block
+    output:
+      type: bitcoin.analytics.v1.MempoolData
