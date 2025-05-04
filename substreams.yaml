@@ -6,7 +6,7 @@ package:
   doc: Bitcoin blockchain analytics framework using Substreams
 
 imports:
-  bitcoin: https://github.com/streamingfast/substreams-bitcoin/releases/download/v0.1.1/substreams-bitcoin-v0.1.1.spkg
+  bitcoin: github.com/streamingfast/substreams-bitcoin/v2.0.0
 
 protobuf:
   files:
@@ -26,44 +26,20 @@ modules:
     inputs:
       - source: sf.bitcoin.type.v1.Block
     output:
-      type: bitcoin.analytics.v1.Events
+      type: bitcoin.analytics.v1.DatabaseChanges
 
-  - name: map_block_stats
+  - name: map_block_metrics
     kind: map
     initialBlock: 0
     inputs:
       - source: sf.bitcoin.type.v1.Block
     output:
-      type: bitcoin.analytics.v1.BlockStats
+      type: bitcoin.analytics.v1.BlockMetricsRecord
 
-  - name: map_transaction_stats
+  - name: map_daily_metrics
     kind: map
     initialBlock: 0
     inputs:
       - source: sf.bitcoin.type.v1.Block
     output:
-      type: bitcoin.analytics.v1.TransactionStats
-
-  - name: map_address_stats
-    kind: map
-    initialBlock: 0
-    inputs:
-      - source: sf.bitcoin.type.v1.Block
-    output:
-      type: bitcoin.analytics.v1.AddressStats
-
-  - name: map_utxo_stats
-    kind: map
-    initialBlock: 0
-    inputs:
-      - source: sf.bitcoin.type.v1.Block
-    output:
-      type: bitcoin.analytics.v1.UTXOStats
-
-  - name: map_mempool_stats
-    kind: map
-    initialBlock: 0
-    inputs:
-      - source: sf.bitcoin.type.v1.Block
-    output:
-      type: bitcoin.analytics.v1.MempoolData
+      type: bitcoin.analytics.v1.NetworkDailyMetricsRecord

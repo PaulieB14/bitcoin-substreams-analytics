@@ -1,17 +1,26 @@
-use crate::pb::bitcoin::analytics::v1::BlockData;
+use crate::pb::bitcoin::analytics::v1::BlockMetrics;
 use crate::utils;
+use substreams_bitcoin::pb::sf::bitcoin::r#type::v1::Block;
 use substreams::errors::Error;
-use substreams_bitcoin::pb::sf::bitcoin::type::v1::Block;
 
-pub fn extract_block_data(block: &Block) -> Result<BlockData, Error> {
-    // Find coinbase transaction to extract miner info
-    let miner = if !block.transactions.is_empty() {
-        utils::extract_miner_name(&block.transactions[0])
+pub fn extract_block_metrics(block: &Block) -> Result<BlockMetrics, Error> {
+    // Extract miner info
+    let transactions = block.transactions();
+    let tx_count = transactions.count();
+    
+    let miner = if tx_count > 0 {
+        // Get the first transaction (coinbase)
+        let txs = block.transactions().collect::<Vec<_>>();
+        if !txs.is_empty() {
+            utils::extract_miner_name(&txs[0])
+        } else {
+            "Unknown".to_string()
+        }
     } else {
         "Unknown".to_string()
     };
-    
-    // Count SegWit and Taproot transactions for protocol metrics
+
+    // Count segwit and taproot transactions
     let mut segwit_count = 0;
     let mut taproot_count = 0;
     
@@ -23,44 +32,37 @@ pub fn extract_block_data(block: &Block) -> Result<BlockData, Error> {
             taproot_count += 1;
         }
     }
-    
-    // Calculate protocol feature adoption percentages
-    let tx_count = block.transactions.len() as u32;
-    let mut protocol_features = Vec::new();
-    
-    if tx_count > 0 {
-        if segwit_count > 0 {
-            let segwit_feature = crate::pb::bitcoin::analytics::v1::ProtocolFeature {
-                name: "SegWit".to_string(),
-                count: segwit_count,
-                percentage: (segwit_count as f64 / tx_count as f64) * 100.0,
-            };
-            protocol_features.push(segwit_feature);
-        }
-        
-        if taproot_count > 0 {
-            let taproot_feature = crate::pb::bitcoin::analytics::v1::ProtocolFeature {
-                name: "Taproot".to_string(),
-                count: taproot_count,
-                percentage: (taproot_count as f64 / tx_count as f64) * 100.0,
-            };
-            protocol_features.push(taproot_feature);
-        }
-    }
-    
-    // Create BlockData object
-    let block_data = BlockData {
-        block_number: block.height as u64,
-        block_hash: utils::to_hex_string(&block.hash),
-        timestamp: block.timestamp as u64,
-        size: block.size as u32,
-        weight: block.weight as u32,
-        transaction_count: tx_count,
-        miner,
-        version: block.version as u32,
-        difficulty: block.bits.to_string(), // Convert bits to difficulty
-        protocol_features,
+
+    // Calculate segwit and taproot percentages
+    let segwit_percent = if tx_count > 0 {
+        segwit_count as f64 / tx_count as f64 * 100.0
+    } else {
+        0.0
     };
     
-    Ok(block_data)
+    let taproot_percent = if tx_count > 0 {
+        taproot_count as f64 / tx_count as f64 * 100.0
+    } else {
+        0.0
+    };
+
+    // Create BlockMetrics
+    let block_metrics = BlockMetrics {
+        number: block.height as u64,
+        hash: utils::to_hex_string(&block.hash),
+        timestamp: block.height as u64, // Using height as timestamp for now
+        size: block.size as u32,
+        weight: block.weight as u32,
+        tx_count: tx_count as u32,
+        difficulty: block.bits.parse::<f64>().unwrap_or(0.0),
+        miner,
+        block_time: 0, // We don't have this information
+        total_fees: 0, // We don't calculate this yet
+        block_reward: 0, // We don't calculate this yet
+        version: block.version as u32,
+        nonce: block.nonce as u32,
+        bits: block.bits.parse::<u32>().unwrap_or(0),
+    };
+
+    Ok(block_metrics)
 }

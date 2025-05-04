@@ -2,130 +2,98 @@ syntax = "proto3";
 
 package bitcoin.analytics.v1;
 
-// Main Events message containing all analytics data types
-message Events {
-  repeated BlockData blocks = 1;
-  repeated TransactionData transactions = 2;
-  repeated AddressActivity address_activities = 3;
-  repeated UTXOData utxos = 4;
-  repeated MemPoolStats mempool_stats = 5;
+// Main container for database changes
+message DatabaseChanges {
+  repeated BlockMetricsRecord block_metrics = 1;
+  repeated TransactionMetricsRecord transaction_metrics = 2;
+  repeated AddressActivityRecord address_activities = 3;
+  repeated NetworkDailyMetricsRecord daily_metrics = 4;
 }
 
-// Block-level analytics data
-message BlockData {
-  uint64 block_number = 1;
-  string block_hash = 2;
+// Block metrics
+message BlockMetrics {
+  uint64 number = 1;
+  string hash = 2;
   uint64 timestamp = 3;
   uint32 size = 4;
   uint32 weight = 5;
-  uint32 transaction_count = 6;
-  string miner = 7;          // Mining pool identification if available
-  uint32 version = 8;
-  string difficulty = 9;     // As string to handle large numbers
-  repeated ProtocolFeature protocol_features = 10; // SegWit, Taproot adoption metrics
+  uint32 tx_count = 6;
+  double difficulty = 7;
+  string miner = 8;
+  uint32 block_time = 9;
+  uint64 total_fees = 10;
+  uint64 block_reward = 11;
+  uint32 version = 12;
+  uint32 nonce = 13;
+  uint32 bits = 14;
 }
 
-// Transaction-level analytics data
-message TransactionData {
-  string transaction_hash = 1;
+// Transaction metrics
+message TransactionMetrics {
+  string hash = 1;
   uint64 block_number = 2;
-  uint32 size = 3;
-  uint32 weight = 4;
-  uint32 virtual_size = 5;   // vSize
-  uint64 fee = 6;            // In satoshis
-  double fee_rate = 7;       // Satoshis per vByte
-  uint32 input_count = 8;
-  uint32 output_count = 9;
-  uint64 total_input_value = 10; // In satoshis
-  uint64 total_output_value = 11; // In satoshis
-  bool is_coinbase = 12;
-  TransactionType type = 13;
-  repeated string input_addresses = 14;
-  repeated string output_addresses = 15;
+  uint64 block_timestamp = 3;
+  uint32 input_count = 4;
+  uint32 output_count = 5;
+  uint64 fee = 6;
+  double fee_rate = 7;
+  uint32 size = 8;
+  uint32 weight = 9;
+  bool is_coinbase = 10;
+  uint32 version = 11;
+  bool has_witness = 12;
+  uint32 locktime = 13;
+  uint64 input_value = 14;
+  uint64 output_value = 15;
+  string tx_type = 16;
 }
 
-// Address activity data
+// Address activity
 message AddressActivity {
   string address = 1;
-  uint64 block_number = 2;
-  string transaction_hash = 3;
-  ActivityType type = 4;     // Send or Receive
-  uint64 value = 5;          // In satoshis
-  uint64 balance = 6;        // Current balance after transaction
-  uint32 utxo_count = 7;     // Number of UTXOs for this address
-}
-
-// UTXO data
-message UTXOData {
-  string transaction_hash = 1;
-  uint32 output_index = 2;
+  string tx_hash = 2;
   uint64 block_number = 3;
-  uint64 value = 4;          // In satoshis
-  bool is_spent = 5;
-  string spending_transaction_hash = 6;
-  uint64 spending_block_number = 7;
-  string address = 8;        // Address controlling this UTXO
-  uint64 age = 9;            // Age in blocks
+  uint64 block_timestamp = 4;
+  bool is_input = 5;
+  uint64 value = 6;
+  string script_type = 7;
+  string address_tag = 8;
+  string address_category = 9;
 }
 
-// Mempool statistics
-message MemPoolStats {
-  uint64 timestamp = 1;
-  uint32 transaction_count = 2;
-  uint64 total_fee = 3;      // In satoshis
-  double median_fee_rate = 4; // Satoshis per vByte
-  FeeDistribution fee_distribution = 5;
-  uint64 total_mempool_size = 6; // In bytes
+// Network daily metrics
+message NetworkDailyMetrics {
+  uint64 date = 1;
+  double avg_block_time = 2;
+  uint32 total_tx_count = 3;
+  uint64 total_tx_volume = 4;
+  uint32 avg_block_size = 5;
+  double avg_tx_per_block = 6;
+  double avg_fee_rate = 7;
+  uint32 mempool_tx_count = 8;
+  double segwit_tx_percent = 9;
+  double taproot_tx_percent = 10;
+  double avg_difficulty = 11;
+  uint32 active_addresses = 12;
 }
 
-// Fee distribution for different priority levels
-message FeeDistribution {
-  double high_priority_fee_rate = 1;   // For next block (satoshis/vByte)
-  double medium_priority_fee_rate = 2; // For next few blocks (satoshis/vByte)
-  double low_priority_fee_rate = 3;    // For eventual confirmation (satoshis/vByte)
+// Record wrappers for database tables
+message BlockMetricsRecord {
+  string table = 1;
+  BlockMetrics block = 2;
 }
 
-// Transaction types
-enum TransactionType {
-  TRANSACTION_TYPE_UNSPECIFIED = 0;
-  TRANSACTION_TYPE_STANDARD = 1;
-  TRANSACTION_TYPE_SEGWIT = 2;
-  TRANSACTION_TYPE_TAPROOT = 3;
-  TRANSACTION_TYPE_MULTISIG = 4;
-  TRANSACTION_TYPE_LIGHTNING = 5;
+message TransactionMetricsRecord {
+  string table = 1;
+  TransactionMetrics transaction = 2;
 }
 
-// Activity types
-enum ActivityType {
-  ACTIVITY_TYPE_UNSPECIFIED = 0;
-  ACTIVITY_TYPE_SEND = 1;
-  ACTIVITY_TYPE_RECEIVE = 2;
+message AddressActivityRecord {
+  string table = 1;
+  AddressActivity activity = 2;
 }
 
-// Protocol feature adoption metrics
-message ProtocolFeature {
-  string name = 1;           // SegWit, Taproot, etc.
-  uint32 count = 2;          // Number of transactions using this feature
-  double percentage = 3;      // Percentage of total transactions
-}
-
-// Maps for aggregated statistics
-message BlockStats {
-  map<uint64, BlockData> blocks = 1;
-}
-
-message TransactionStats {
-  map<string, TransactionData> transactions = 1;
-}
-
-message AddressStats {
-  map<string, AddressActivity> activities = 1;
-}
-
-message UTXOStats {
-  map<string, UTXOData> utxos = 1;
-}
-
-message MempoolData {
-  map<uint64, MemPoolStats> stats = 1; // Timestamp to stats mapping
+message NetworkDailyMetricsRecord {
+  string table = 1;
+  NetworkDailyMetrics metrics = 2;
 }

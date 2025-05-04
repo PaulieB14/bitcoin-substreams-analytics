@@ -2,116 +2,121 @@ mod pb;
 mod utils;
 mod mappers;
 
-use pb::bitcoin::analytics::v1::{Events, BlockData, TransactionData, AddressActivity, UTXOData, MemPoolStats};
+use pb::bitcoin::analytics::v1::{DatabaseChanges, BlockMetrics, TransactionMetrics, AddressActivity};
 use substreams::errors::Error;
-use substreams_bitcoin::pb::sf::bitcoin::type::v1::{Block, Transaction};
+use substreams_bitcoin::pb::sf::bitcoin::r#type::v1::{Block, Transaction};
 
 /// Maps Bitcoin blocks to analytics events
 #[substreams::handlers::map]
-pub fn map_events(block: Block) -> Result<Events, Error> {
-    let mut events = Events::default();
+pub fn map_events(block: Block) -> Result<DatabaseChanges, Error> {
+    let mut events = DatabaseChanges::default();
     
     // Process block-level data
-    let block_data = mappers::block::extract_block_data(&block)?;
-    events.blocks.push(block_data);
+    let block_data = mappers::block::extract_block_metrics(&block)?;
+    events.block_metrics.push(pb::bitcoin::analytics::v1::BlockMetricsRecord {
+        table: "blocks".to_string(),
+        block: Some(block_data),
+    });
     
     // Process transaction-level data
-    for transaction in block.transactions() {
-        let tx_data = mappers::transaction::extract_transaction_data(transaction, block.height as u64)?;
-        events.transactions.push(tx_data);
+    let transactions = block.transactions().collect::<Vec<_>>();
+    for transaction in &transactions {
+        let tx_data = mappers::transaction::extract_transaction_metrics(transaction, block.height as u64)?;
+        events.transaction_metrics.push(pb::bitcoin::analytics::v1::TransactionMetricsRecord {
+            table: "transactions".to_string(),
+            transaction: Some(tx_data),
+        });
         
-        // Process UTXO and address data from this transaction
-        let (utxos, addresses) = mappers::address::extract_address_and_utxo_data(
+        // Process address data from this transaction
+        let addresses = mappers::address::extract_address_activities(
             transaction, 
             block.height as u64, 
-            block.timestamp as u64
+            block.height as u64 // Using block height as timestamp for now
         )?;
         
-        events.utxos.extend(utxos);
-        events.address_activities.extend(addresses);
-    }
-    
-    // Add mempool statistics if available
-    if let Some(mempool_stats) = mappers::mempool::extract_mempool_stats(&block)? {
-        events.mempool_stats.push(mempool_stats);
+        for activity in addresses {
+            events.address_activities.push(pb::bitcoin::analytics::v1::AddressActivityRecord {
+                table: "address_activities".to_string(),
+                activity: Some(activity),
+            });
+        }
     }
     
     Ok(events)
 }
 
-/// Maps blocks to a collection of aggregated block data
+/// Maps blocks to block metrics
 #[substreams::handlers::map]
-pub fn map_block_stats(block: Block) -> Result<pb::bitcoin::analytics::v1::BlockStats, Error> {
-    let mut stats = pb::bitcoin::analytics::v1::BlockStats::default();
-    let block_data = mappers::block::extract_block_data(&block)?;
-    stats.blocks.insert(block.height as u64, block_data);
-    Ok(stats)
+pub fn map_block_metrics(block: Block) -> Result<pb::bitcoin::analytics::v1::BlockMetricsRecord, Error> {
+    let block_data = mappers::block::extract_block_metrics(&block)?;
+    Ok(pb::bitcoin::analytics::v1::BlockMetricsRecord {
+        table: "blocks".to_string(),
+        block: Some(block_data),
+    })
 }
 
-/// Maps transactions to a collection of aggregated transaction data
-#[substreams::handlers::map]
-pub fn map_transaction_stats(block: Block) -> Result<pb::bitcoin::analytics::v1::TransactionStats, Error> {
-    let mut stats = pb::bitcoin::analytics::v1::TransactionStats::default();
+/// Maps transactions to transaction metrics - this is a helper function, not exposed as a module
+fn map_transaction_metrics_helper(block: &Block) -> Result<Vec<pb::bitcoin::analytics::v1::TransactionMetricsRecord>, Error> {
+    let mut records = Vec::new();
     
-    for transaction in block.transactions() {
-        let tx_data = mappers::transaction::extract_transaction_data(transaction, block.height as u64)?;
-        let tx_hash_hex = utils::to_hex_string(&transaction.hash);
-        stats.transactions.insert(tx_hash_hex, tx_data);
+    let transactions = block.transactions().collect::<Vec<_>>();
+    for transaction in &transactions {
+        let tx_data = mappers::transaction::extract_transaction_metrics(transaction, block.height as u64)?;
+        records.push(pb::bitcoin::analytics::v1::TransactionMetricsRecord {
+            table: "transactions".to_string(),
+            transaction: Some(tx_data),
+        });
     }
     
-    Ok(stats)
+    Ok(records)
 }
 
-/// Maps to address activity statistics
-#[substreams::handlers::map]
-pub fn map_address_stats(block: Block) -> Result<pb::bitcoin::analytics::v1::AddressStats, Error> {
-    let mut stats = pb::bitcoin::analytics::v1::AddressStats::default();
+/// Maps to address activity records - this is a helper function, not exposed as a module
+fn map_address_activities_helper(block: &Block) -> Result<Vec<pb::bitcoin::analytics::v1::AddressActivityRecord>, Error> {
+    let mut records = Vec::new();
     
-    for transaction in block.transactions() {
-        let (_, addresses) = mappers::address::extract_address_and_utxo_data(
+    let transactions = block.transactions().collect::<Vec<_>>();
+    for transaction in &transactions {
+        let addresses = mappers::address::extract_address_activities(
             transaction, 
             block.height as u64, 
-            block.timestamp as u64
+            block.height as u64 // Using block height as timestamp for now
         )?;
         
         for activity in addresses {
-            let key = format!("{}-{}", activity.address, activity.transaction_hash);
-            stats.activities.insert(key, activity);
+            records.push(pb::bitcoin::analytics::v1::AddressActivityRecord {
+                table: "address_activities".to_string(),
+                activity: Some(activity),
+            });
         }
     }
     
-    Ok(stats)
+    Ok(records)
 }
 
-/// Maps to UTXO statistics
+/// Maps to daily network metrics
 #[substreams::handlers::map]
-pub fn map_utxo_stats(block: Block) -> Result<pb::bitcoin::analytics::v1::UTXOStats, Error> {
-    let mut stats = pb::bitcoin::analytics::v1::UTXOStats::default();
+pub fn map_daily_metrics(block: Block) -> Result<pb::bitcoin::analytics::v1::NetworkDailyMetricsRecord, Error> {
+    // This is a placeholder implementation
+    let date_key = utils::metrics_utils::timestamp_to_date_key(block.height as u64);
     
-    for transaction in block.transactions() {
-        let (utxos, _) = mappers::address::extract_address_and_utxo_data(
-            transaction, 
-            block.height as u64, 
-            block.timestamp as u64
-        )?;
-        
-        for utxo in utxos {
-            let key = format!("{}-{}", utxo.transaction_hash, utxo.output_index);
-            stats.utxos.insert(key, utxo);
-        }
-    }
+    let metrics = pb::bitcoin::analytics::v1::NetworkDailyMetrics {
+        date: date_key,
+        avg_block_time: 600.0, // 10 minutes in seconds
+        total_tx_count: block.transactions().count() as u32,
+        total_tx_volume: 0,
+        avg_block_size: block.size as u32,
+        avg_tx_per_block: block.transactions().count() as f64,
+        avg_fee_rate: 0.0,
+        mempool_tx_count: 0,
+        segwit_tx_percent: 0.0,
+        taproot_tx_percent: 0.0,
+        avg_difficulty: block.bits.parse::<f64>().unwrap_or(0.0),
+        active_addresses: 0,
+    };
     
-    Ok(stats)
-}
-
-/// Maps to mempool statistics
-#[substreams::handlers::map]
-pub fn map_mempool_stats(block: Block) -> Result<pb::bitcoin::analytics::v1::MempoolData, Error> {
-    let mut stats = pb::bitcoin::analytics::v1::MempoolData::default();
-    
-    if let Some(mempool_stats) = mappers::mempool::extract_mempool_stats(&block)? {
-        stats.stats.insert(block.timestamp as u64, mempool_stats);
-    }
-    
-    Ok(stats)
+    Ok(pb::bitcoin::analytics::v1::NetworkDailyMetricsRecord {
+        table: "daily_metrics".to_string(),
+        metrics: Some(metrics),
+    })
 }
