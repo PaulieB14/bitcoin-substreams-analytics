@@ -2,19 +2,24 @@
 name = "substreams-bitcoin-analytics"
 version = "0.1.0"
 edition = "2021"
-description = "Bitcoin analytics framework using Substreams"
+description = "Bitcoin analytics framework using Substreams technology and ClickHouse integration"
+license = "MIT"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-substreams = "0.5"
-substreams-bitcoin = "0.1"
-prost = "0.11"
-prost-types = "0.11"
+substreams = "0.6.1"
+substreams-bitcoin = "0.1.1"
+prost = "0.13"
+prost-types = "0.13"
 chrono = "0.4"
 hex = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+base64 = "0.22"
+thiserror = "1.0"
 
 [build-dependencies]
-prost-build = "0.11"
-substreams-bitcoin = "0.1"
+prost-build = "0.13"
+substreams-bitcoin = "0.1.1"
