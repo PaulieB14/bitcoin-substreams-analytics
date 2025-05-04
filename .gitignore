@@ -4,3 +4,7 @@
 # macOS metadata files
 ._*
 .DS_Store
+
+# ENV files and other local configuration
+*.env
+*.local
