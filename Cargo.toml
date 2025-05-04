@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 substreams = "0.6.1"
-substreams-bitcoin = "0.1.1"
+substreams-bitcoin = "1.0.0"
 prost = "0.13"
 prost-types = "0.13"
 chrono = "0.4"
@@ -22,4 +22,4 @@ thiserror = "1.0"
 
 [build-dependencies]
 prost-build = "0.13"
-substreams-bitcoin = "0.1.1"
+substreams-bitcoin = "1.0.0"
