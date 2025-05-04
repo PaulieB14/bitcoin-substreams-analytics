@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package bitcoin.analytics.v1;
+
+// BlockMetrics represents analytics data extracted from a Bitcoin block
+message BlockMetrics {
+  uint64 number = 1;           // Block height
+  string hash = 2;             // Block hash
+  uint64 timestamp = 3;        // Block timestamp (seconds since Unix epoch)
+  uint32 size = 4;             // Block size in bytes
+  uint32 weight = 5;           // Block weight units
+  uint32 tx_count = 6;         // Number of transactions in the block
+  double difficulty = 7;       // Mining difficulty
+  string miner = 8;            // Mining pool name (if identified)
+  uint32 block_time = 9;       // Seconds since previous block
+  uint64 total_fees = 10;      // Total transaction fees in satoshis
+  uint64 block_reward = 11;    // Block subsidy in satoshis
+  uint32 version = 12;         // Block version 
+  uint32 nonce = 13;           // Block nonce
+  uint32 bits = 14;            // Compact block difficulty target
+}
+
+// TransactionMetrics contains detailed information about a Bitcoin transaction
+message TransactionMetrics {
+  string hash = 1;             // Transaction hash
+  uint64 block_number = 2;     // Block height
+  uint64 block_timestamp = 3;  // Block timestamp
+  uint32 input_count = 4;      // Number of inputs
+  uint32 output_count = 5;     // Number of outputs
+  uint64 fee = 6;              // Fee in satoshis
+  double fee_rate = 7;         // Fee rate in satoshis per vbyte
+  uint32 size = 8;             // Transaction size in bytes
+  uint32 weight = 9;           // Transaction weight units
+  bool is_coinbase = 10;       // Whether it's a coinbase transaction
+  uint32 version = 11;         // Transaction version
+  bool has_witness = 12;       // Whether transaction has witness data (SegWit)
+  uint32 locktime = 13;        // Transaction locktime
+  uint64 input_value = 14;     // Total input value in satoshis
+  uint64 output_value = 15;    // Total output value in satoshis
+  string tx_type = 16;         // Transaction type (P2PKH, P2SH, P2WPKH, P2WSH, etc.)
+}
+
+// AddressActivity represents a record of an address being used in a transaction
+message AddressActivity {
+  string address = 1;          // Bitcoin address
+  string tx_hash = 2;          // Transaction hash
+  uint64 block_number = 3;     // Block height
+  uint64 block_timestamp = 4;  // Block timestamp
+  bool is_input = 5;           // Whether address appears in an input
+  uint64 value = 6;            // Value in satoshis
+  string script_type = 7;      // Script type (P2PKH, P2SH, P2WPKH, P2WSH, etc.)
+  string address_tag = 8;      // Known entity tag (e.g. "Binance", "Coinbase")
+  string address_category = 9; // Category (e.g. "Exchange", "Mining Pool", "Custodial")
+}
+
+// NetworkDailyMetrics contains rolled-up statistics for a day of network activity
+message NetworkDailyMetrics {
+  uint64 date = 1;                // Date in YYYYMMDD format
+  double avg_block_time = 2;      // Average block time in seconds
+  uint32 total_tx_count = 3;      // Total transactions processed that day
+  uint64 total_tx_volume = 4;     // Total transaction volume in satoshis
+  uint32 avg_block_size = 5;      // Average block size in bytes
+  double avg_tx_per_block = 6;    // Average transactions per block
+  double avg_fee_rate = 7;        // Average fee rate in satoshis per vbyte
+  uint32 mempool_tx_count = 8;    // Transactions in mempool at end of day
+  double segwit_tx_percent = 9;   // Percentage of transactions using SegWit
+  double taproot_tx_percent = 10; // Percentage of transactions using Taproot
+  double avg_difficulty = 11;     // Average mining difficulty
+  uint32 active_addresses = 12;   // Number of unique active addresses
+}
+
+// Database operations to insert data into ClickHouse
+message DatabaseChanges {
+  repeated BlockMetricsRecord block_metrics = 1;
+  repeated TransactionMetricsRecord transaction_metrics = 2;
+  repeated AddressActivityRecord address_activities = 3;
+  repeated NetworkDailyMetricsRecord daily_metrics = 4;
+}
+
+// Database record types
+message BlockMetricsRecord {
+  string table = 1;
+  BlockMetrics block = 2;
+}
+
+message TransactionMetricsRecord {
+  string table = 1;
+  TransactionMetrics transaction = 2;
+}
+
+message AddressActivityRecord {
+  string table = 1;
+  AddressActivity activity = 2;
+}
+
+message NetworkDailyMetricsRecord {
+  string table = 1;
+  NetworkDailyMetrics metrics = 2;
+}
