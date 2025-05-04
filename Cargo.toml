@@ -1,0 +1,20 @@
+[package]
+name = "substreams-bitcoin-analytics"
+version = "0.1.0"
+edition = "2021"
+description = "Bitcoin analytics framework using Substreams"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+substreams = "0.5"
+substreams-bitcoin = "0.1"
+prost = "0.11"
+prost-types = "0.11"
+chrono = "0.4"
+hex = "0.4"
+
+[build-dependencies]
+prost-build = "0.11"
+substreams-bitcoin = "0.1"
