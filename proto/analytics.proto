@@ -2,98 +2,130 @@ syntax = "proto3";
 
 package bitcoin.analytics.v1;
 
-// BlockMetrics represents analytics data extracted from a Bitcoin block
-message BlockMetrics {
-  uint64 number = 1;           // Block height
-  string hash = 2;             // Block hash
-  uint64 timestamp = 3;        // Block timestamp (seconds since Unix epoch)
-  uint32 size = 4;             // Block size in bytes
-  uint32 weight = 5;           // Block weight units
-  uint32 tx_count = 6;         // Number of transactions in the block
-  double difficulty = 7;       // Mining difficulty
-  string miner = 8;            // Mining pool name (if identified)
-  uint32 block_time = 9;       // Seconds since previous block
-  uint64 total_fees = 10;      // Total transaction fees in satoshis
-  uint64 block_reward = 11;    // Block subsidy in satoshis
-  uint32 version = 12;         // Block version 
-  uint32 nonce = 13;           // Block nonce
-  uint32 bits = 14;            // Compact block difficulty target
+// Main Events message containing all analytics data types
+message Events {
+  repeated BlockData blocks = 1;
+  repeated TransactionData transactions = 2;
+  repeated AddressActivity address_activities = 3;
+  repeated UTXOData utxos = 4;
+  repeated MemPoolStats mempool_stats = 5;
 }
 
-// TransactionMetrics contains detailed information about a Bitcoin transaction
-message TransactionMetrics {
-  string hash = 1;             // Transaction hash
-  uint64 block_number = 2;     // Block height
-  uint64 block_timestamp = 3;  // Block timestamp
-  uint32 input_count = 4;      // Number of inputs
-  uint32 output_count = 5;     // Number of outputs
-  uint64 fee = 6;              // Fee in satoshis
-  double fee_rate = 7;         // Fee rate in satoshis per vbyte
-  uint32 size = 8;             // Transaction size in bytes
-  uint32 weight = 9;           // Transaction weight units
-  bool is_coinbase = 10;       // Whether it's a coinbase transaction
-  uint32 version = 11;         // Transaction version
-  bool has_witness = 12;       // Whether transaction has witness data (SegWit)
-  uint32 locktime = 13;        // Transaction locktime
-  uint64 input_value = 14;     // Total input value in satoshis
-  uint64 output_value = 15;    // Total output value in satoshis
-  string tx_type = 16;         // Transaction type (P2PKH, P2SH, P2WPKH, P2WSH, etc.)
+// Block-level analytics data
+message BlockData {
+  uint64 block_number = 1;
+  string block_hash = 2;
+  uint64 timestamp = 3;
+  uint32 size = 4;
+  uint32 weight = 5;
+  uint32 transaction_count = 6;
+  string miner = 7;          // Mining pool identification if available
+  uint32 version = 8;
+  string difficulty = 9;     // As string to handle large numbers
+  repeated ProtocolFeature protocol_features = 10; // SegWit, Taproot adoption metrics
 }
 
-// AddressActivity represents a record of an address being used in a transaction
+// Transaction-level analytics data
+message TransactionData {
+  string transaction_hash = 1;
+  uint64 block_number = 2;
+  uint32 size = 3;
+  uint32 weight = 4;
+  uint32 virtual_size = 5;   // vSize
+  uint64 fee = 6;            // In satoshis
+  double fee_rate = 7;       // Satoshis per vByte
+  uint32 input_count = 8;
+  uint32 output_count = 9;
+  uint64 total_input_value = 10; // In satoshis
+  uint64 total_output_value = 11; // In satoshis
+  bool is_coinbase = 12;
+  TransactionType type = 13;
+  repeated string input_addresses = 14;
+  repeated string output_addresses = 15;
+}
+
+// Address activity data
 message AddressActivity {
-  string address = 1;          // Bitcoin address
-  string tx_hash = 2;          // Transaction hash
-  uint64 block_number = 3;     // Block height
-  uint64 block_timestamp = 4;  // Block timestamp
-  bool is_input = 5;           // Whether address appears in an input
-  uint64 value = 6;            // Value in satoshis
-  string script_type = 7;      // Script type (P2PKH, P2SH, P2WPKH, P2WSH, etc.)
-  string address_tag = 8;      // Known entity tag (e.g. "Binance", "Coinbase")
-  string address_category = 9; // Category (e.g. "Exchange", "Mining Pool", "Custodial")
+  string address = 1;
+  uint64 block_number = 2;
+  string transaction_hash = 3;
+  ActivityType type = 4;     // Send or Receive
+  uint64 value = 5;          // In satoshis
+  uint64 balance = 6;        // Current balance after transaction
+  uint32 utxo_count = 7;     // Number of UTXOs for this address
 }
 
-// NetworkDailyMetrics contains rolled-up statistics for a day of network activity
-message NetworkDailyMetrics {
-  uint64 date = 1;                // Date in YYYYMMDD format
-  double avg_block_time = 2;      // Average block time in seconds
-  uint32 total_tx_count = 3;      // Total transactions processed that day
-  uint64 total_tx_volume = 4;     // Total transaction volume in satoshis
-  uint32 avg_block_size = 5;      // Average block size in bytes
-  double avg_tx_per_block = 6;    // Average transactions per block
-  double avg_fee_rate = 7;        // Average fee rate in satoshis per vbyte
-  uint32 mempool_tx_count = 8;    // Transactions in mempool at end of day
-  double segwit_tx_percent = 9;   // Percentage of transactions using SegWit
-  double taproot_tx_percent = 10; // Percentage of transactions using Taproot
-  double avg_difficulty = 11;     // Average mining difficulty
-  uint32 active_addresses = 12;   // Number of unique active addresses
+// UTXO data
+message UTXOData {
+  string transaction_hash = 1;
+  uint32 output_index = 2;
+  uint64 block_number = 3;
+  uint64 value = 4;          // In satoshis
+  bool is_spent = 5;
+  string spending_transaction_hash = 6;
+  uint64 spending_block_number = 7;
+  string address = 8;        // Address controlling this UTXO
+  uint64 age = 9;            // Age in blocks
 }
 
-// Database operations to insert data into ClickHouse
-message DatabaseChanges {
-  repeated BlockMetricsRecord block_metrics = 1;
-  repeated TransactionMetricsRecord transaction_metrics = 2;
-  repeated AddressActivityRecord address_activities = 3;
-  repeated NetworkDailyMetricsRecord daily_metrics = 4;
+// Mempool statistics
+message MemPoolStats {
+  uint64 timestamp = 1;
+  uint32 transaction_count = 2;
+  uint64 total_fee = 3;      // In satoshis
+  double median_fee_rate = 4; // Satoshis per vByte
+  FeeDistribution fee_distribution = 5;
+  uint64 total_mempool_size = 6; // In bytes
 }
 
-// Database record types
-message BlockMetricsRecord {
-  string table = 1;
-  BlockMetrics block = 2;
+// Fee distribution for different priority levels
+message FeeDistribution {
+  double high_priority_fee_rate = 1;   // For next block (satoshis/vByte)
+  double medium_priority_fee_rate = 2; // For next few blocks (satoshis/vByte)
+  double low_priority_fee_rate = 3;    // For eventual confirmation (satoshis/vByte)
 }
 
-message TransactionMetricsRecord {
-  string table = 1;
-  TransactionMetrics transaction = 2;
+// Transaction types
+enum TransactionType {
+  TRANSACTION_TYPE_UNSPECIFIED = 0;
+  TRANSACTION_TYPE_STANDARD = 1;
+  TRANSACTION_TYPE_SEGWIT = 2;
+  TRANSACTION_TYPE_TAPROOT = 3;
+  TRANSACTION_TYPE_MULTISIG = 4;
+  TRANSACTION_TYPE_LIGHTNING = 5;
 }
 
-message AddressActivityRecord {
-  string table = 1;
-  AddressActivity activity = 2;
+// Activity types
+enum ActivityType {
+  ACTIVITY_TYPE_UNSPECIFIED = 0;
+  ACTIVITY_TYPE_SEND = 1;
+  ACTIVITY_TYPE_RECEIVE = 2;
 }
 
-message NetworkDailyMetricsRecord {
-  string table = 1;
-  NetworkDailyMetrics metrics = 2;
+// Protocol feature adoption metrics
+message ProtocolFeature {
+  string name = 1;           // SegWit, Taproot, etc.
+  uint32 count = 2;          // Number of transactions using this feature
+  double percentage = 3;      // Percentage of total transactions
+}
+
+// Maps for aggregated statistics
+message BlockStats {
+  map<uint64, BlockData> blocks = 1;
+}
+
+message TransactionStats {
+  map<string, TransactionData> transactions = 1;
+}
+
+message AddressStats {
+  map<string, AddressActivity> activities = 1;
+}
+
+message UTXOStats {
+  map<string, UTXOData> utxos = 1;
+}
+
+message MempoolData {
+  map<uint64, MemPoolStats> stats = 1; // Timestamp to stats mapping
 }
