@@ -95,7 +95,7 @@ The system extracts the following data from Bitcoin blocks:
 
 ### Protobuf Generation
 
-This project uses `substreams-protogen` to automatically generate Rust code from Protocol Buffer definitions. The generation happens during the build process via the `build.rs` script.
+This project uses `prost-build` to automatically generate Rust code from Protocol Buffer definitions. The generation happens during the build process via the `build.rs` script.
 
 To manually regenerate the Protocol Buffer code:
 ```sh
