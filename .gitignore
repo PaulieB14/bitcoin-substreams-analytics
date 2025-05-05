@@ -1,5 +1,7 @@
 # Rust build artifacts
 /target/
+target/
+*.wasm
 
 # macOS metadata files
 ._*
@@ -8,3 +10,9 @@
 # ENV files and other local configuration
 *.env
 *.local
+
+# Generated files
+/src/pb/bitcoin/
+
+# Substreams
+*.spkg

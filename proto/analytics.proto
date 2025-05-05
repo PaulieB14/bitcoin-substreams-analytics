@@ -2,14 +2,6 @@ syntax = "proto3";
 
 package bitcoin.analytics.v1;
 
-// Main container for database changes
-message DatabaseChanges {
-  repeated BlockMetricsRecord block_metrics = 1;
-  repeated TransactionMetricsRecord transaction_metrics = 2;
-  repeated AddressActivityRecord address_activities = 3;
-  repeated NetworkDailyMetricsRecord daily_metrics = 4;
-}
-
 // Block metrics
 message BlockMetrics {
   uint64 number = 1;
@@ -28,72 +20,8 @@ message BlockMetrics {
   uint32 bits = 14;
 }
 
-// Transaction metrics
-message TransactionMetrics {
-  string hash = 1;
-  uint64 block_number = 2;
-  uint64 block_timestamp = 3;
-  uint32 input_count = 4;
-  uint32 output_count = 5;
-  uint64 fee = 6;
-  double fee_rate = 7;
-  uint32 size = 8;
-  uint32 weight = 9;
-  bool is_coinbase = 10;
-  uint32 version = 11;
-  bool has_witness = 12;
-  uint32 locktime = 13;
-  uint64 input_value = 14;
-  uint64 output_value = 15;
-  string tx_type = 16;
-}
-
-// Address activity
-message AddressActivity {
-  string address = 1;
-  string tx_hash = 2;
-  uint64 block_number = 3;
-  uint64 block_timestamp = 4;
-  bool is_input = 5;
-  uint64 value = 6;
-  string script_type = 7;
-  string address_tag = 8;
-  string address_category = 9;
-}
-
-// Network daily metrics
-message NetworkDailyMetrics {
-  uint64 date = 1;
-  double avg_block_time = 2;
-  uint32 total_tx_count = 3;
-  uint64 total_tx_volume = 4;
-  uint32 avg_block_size = 5;
-  double avg_tx_per_block = 6;
-  double avg_fee_rate = 7;
-  uint32 mempool_tx_count = 8;
-  double segwit_tx_percent = 9;
-  double taproot_tx_percent = 10;
-  double avg_difficulty = 11;
-  uint32 active_addresses = 12;
-}
-
-// Record wrappers for database tables
+// Record wrapper for database table
 message BlockMetricsRecord {
   string table = 1;
   BlockMetrics block = 2;
-}
-
-message TransactionMetricsRecord {
-  string table = 1;
-  TransactionMetrics transaction = 2;
-}
-
-message AddressActivityRecord {
-  string table = 1;
-  AddressActivity activity = 2;
-}
-
-message NetworkDailyMetricsRecord {
-  string table = 1;
-  NetworkDailyMetrics metrics = 2;
 }

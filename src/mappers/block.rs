@@ -34,13 +34,13 @@ pub fn extract_block_metrics(block: &Block) -> Result<BlockMetrics, Error> {
     }
 
     // Calculate segwit and taproot percentages
-    let segwit_percent = if tx_count > 0 {
+    let _segwit_percent = if tx_count > 0 {
         segwit_count as f64 / tx_count as f64 * 100.0
     } else {
         0.0
     };
     
-    let taproot_percent = if tx_count > 0 {
+    let _taproot_percent = if tx_count > 0 {
         taproot_count as f64 / tx_count as f64 * 100.0
     } else {
         0.0

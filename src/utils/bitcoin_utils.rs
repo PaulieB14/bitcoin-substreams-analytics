@@ -67,7 +67,7 @@ pub fn extract_miner_name(_tx: &substreams_bitcoin::pb::sf::bitcoin::r#type::v1:
 }
 
 /// Extract a Bitcoin address from an output script
-pub fn extract_address_from_script(script_bytes: &[u8], testnet: bool) -> Option<String> {
+pub fn extract_address_from_script(script_bytes: &[u8], _testnet: bool) -> Option<String> {
     // In a real implementation, this would use proper Bitcoin address encoding
     // This is a simplified placeholder that doesn't actually decode addresses
     if script_bytes.is_empty() {
