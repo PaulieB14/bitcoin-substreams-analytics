@@ -46,16 +46,35 @@ pub fn parse_output_script(script_bytes: &[u8]) -> String {
 }
 
 /// Check if a transaction is a SegWit transaction
-pub fn is_segwit_transaction(_tx: &substreams_bitcoin::pb::sf::bitcoin::r#type::v1::Transaction) -> bool {
-    // In a real implementation, we would check if the transaction has witness data
-    // For now, return a placeholder
+pub fn is_segwit_transaction(tx: &substreams_bitcoin::pb::sf::bitcoin::r#type::v1::Transaction) -> bool {
+    // A transaction is SegWit if any of its inputs has witness data
+    for vin in &tx.vin {
+        if !vin.txinwitness.is_empty() {
+            return true;
+        }
+    }
     false
 }
 
 /// Check if a transaction is a Taproot transaction
-pub fn is_taproot_transaction(_tx: &substreams_bitcoin::pb::sf::bitcoin::r#type::v1::Transaction) -> bool {
-    // This is a simplified check - in a real implementation, we would need to analyze the outputs
-    // to determine if they use Taproot (P2TR) scripts
+pub fn is_taproot_transaction(tx: &substreams_bitcoin::pb::sf::bitcoin::r#type::v1::Transaction) -> bool {
+    // A transaction is Taproot if any of its outputs uses a P2TR script
+    // P2TR scripts start with OP_1 (0x51) followed by a 32-byte x-only pubkey
+    for vout in &tx.vout {
+        // Check if the script_pub_key is present and is a P2TR script
+        if let Some(script) = &vout.script_pub_key {
+            // Check if the type field is set to "witness_v1_taproot"
+            if script.r#type == "witness_v1_taproot" {
+                return true;
+            }
+            
+            // Alternatively, check the hex representation of the script
+            // P2TR scripts in hex start with "51" (OP_1) followed by "20" (push 32 bytes) and then 32 bytes
+            if script.hex.len() >= 68 && script.hex.starts_with("5120") {
+                return true;
+            }
+        }
+    }
     false
 }
 
