@@ -14,3 +14,12 @@ pub fn map_block_metrics(block: Block) -> Result<pb::bitcoin::analytics::v1::Blo
         block: Some(block_data),
     })
 }
+
+/// Maps blocks to UTXO records
+#[substreams::handlers::map]
+pub fn map_utxos(block: Block) -> Result<pb::bitcoin::utxo::v1::UTXORecords, Error> {
+    let records = mappers::utxo::process_utxos(&block)?;
+    Ok(pb::bitcoin::utxo::v1::UTXORecords {
+        records,
+    })
+}

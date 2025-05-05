@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package bitcoin.utxo.v1;
+
+// Represents a single UTXO (Unspent Transaction Output)
+message UTXO {
+  string tx_id = 1;           // Transaction ID
+  uint32 vout_index = 2;      // Output index in the transaction
+  uint64 value = 3;           // Value in satoshis
+  string script_type = 4;     // Type of script (P2PKH, P2SH, P2WPKH, etc.)
+  string address = 5;         // Bitcoin address (if can be derived)
+  uint64 block_height = 6;    // Block height when this UTXO was created
+  uint64 block_time = 7;      // Block timestamp when this UTXO was created
+}
+
+// Represents a collection of UTXOs
+message UTXOSet {
+  repeated UTXO utxos = 1;
+}
+
+// Represents a token balance for an address
+message TokenBalance {
+  string address = 1;         // Bitcoin address
+  uint64 balance = 2;         // Balance in satoshis
+  uint32 utxo_count = 3;      // Number of UTXOs for this address
+}
+
+// Represents a collection of token balances
+message TokenBalances {
+  repeated TokenBalance balances = 1;
+}
+
+// Record wrapper for database table
+message UTXORecord {
+  string table = 1;
+  UTXO utxo = 2;
+}
+
+// Record wrapper for database table
+message TokenBalanceRecord {
+  string table = 1;
+  TokenBalance balance = 2;
+}
+
+// Container for multiple UTXO records
+message UTXORecords {
+  repeated UTXORecord records = 1;
+}

@@ -1,12 +1,14 @@
 # Bitcoin Substreams Analytics
 
-A simple framework for extracting Bitcoin blockchain data using Substreams technology.
+A simple framework for extracting Bitcoin blockchain data using Substreams technology, with support for UTXO tracking and token balances in ClickHouse.
 
 ## Overview
 
-This project provides a basic solution for Bitcoin blockchain analytics, focusing on:
+This project provides a comprehensive solution for Bitcoin blockchain analytics, focusing on:
 
 - Extraction of key metrics from Bitcoin blocks
+- UTXO tracking and token balance calculation
+- Integration with ClickHouse for efficient querying and analytics
 - Processing using Substreams technology
 - Simple and clean implementation following best practices
 
@@ -15,7 +17,8 @@ This project provides a basic solution for Bitcoin blockchain analytics, focusin
 ```
 bitcoin-substreams-analytics/
 ├── proto/                      # Protocol Buffer definitions
-│   └── analytics.proto         # Data models for analytics
+│   ├── analytics.proto         # Data models for block analytics
+│   └── utxo.proto              # Data models for UTXO tracking
 ├── src/                        # Rust source code
 │   ├── lib.rs                  # Main library implementation
 │   ├── pb/                     # Generated Protocol Buffer code
@@ -24,12 +27,16 @@ bitcoin-substreams-analytics/
 │   │   └── bitcoin_utils.rs    # Bitcoin-specific utilities
 │   └── mappers/                # Data mapping modules
 │       ├── mod.rs              # Module definitions
-│       └── block.rs            # Block data extraction
+│       ├── block.rs            # Block data extraction
+│       └── utxo.rs             # UTXO tracking implementation
 ├── substreams.yaml             # Substreams manifest
 ├── simple-substreams.yaml      # Simplified Substreams manifest
 ├── build.rs                    # Build script for protobuf generation
 ├── Cargo.toml                  # Rust package definition
 ├── Makefile                    # Build and run commands
+├── clickhouse_schema.sql       # ClickHouse schema for token balances
+├── sink_config.yaml            # Substreams sink configuration
+├── CLICKHOUSE_SETUP.md         # ClickHouse setup documentation
 └── README.md                   # This file
 ```
 
@@ -77,6 +84,46 @@ bitcoin-substreams-analytics/
    make info
    ```
 
+### Setting Up ClickHouse Integration
+
+1. Install ClickHouse:
+   ```sh
+   # For Docker
+   docker run -d --name clickhouse-server -p 8123:8123 -p 9000:9000 clickhouse/clickhouse-server
+   ```
+
+2. Create the ClickHouse schema:
+   ```sh
+   # Using the ClickHouse client
+   cat clickhouse_schema.sql | clickhouse-client -h localhost
+   
+   # Or using the HTTP interface
+   curl -X POST http://localhost:8123/ --data-binary @clickhouse_schema.sql
+   ```
+
+3. Configure the Substreams sink:
+   ```sh
+   # Edit the sink_config.yaml file to match your ClickHouse connection details
+   
+   # Run the sink (requires substreams-sink-sql)
+   substreams-sink-sql run \
+     pinax.firehose.xyz:443 \
+     sink_config.yaml \
+     substreams.spkg \
+     map_utxos
+   ```
+
+4. Query token balances:
+   ```sql
+   -- Example: Get top 10 addresses by balance
+   SELECT address, balance, utxo_count
+   FROM bitcoin_token_balances_latest
+   ORDER BY balance DESC
+   LIMIT 10;
+   ```
+
+For more detailed instructions, see the `CLICKHOUSE_SETUP.md` file.
+
 ## Data Models
 
 ### Block Analytics
@@ -90,6 +137,26 @@ The system extracts the following data from Bitcoin blocks:
 - Miner identification
 - Version and difficulty
 - Protocol feature adoption metrics (SegWit, Taproot)
+
+### UTXO Tracking
+
+The UTXO tracking module processes Bitcoin transactions to:
+
+- Track all unspent transaction outputs (UTXOs)
+- Record when UTXOs are created and spent
+- Extract Bitcoin addresses from output scripts
+- Calculate token balances for each address
+
+### ClickHouse Integration
+
+The project includes a comprehensive ClickHouse schema for:
+
+- Storing UTXO data
+- Calculating and tracking token balances
+- Maintaining address transaction history
+- Generating rich lists and statistics
+
+See the `CLICKHOUSE_SETUP.md` file for detailed information on setting up and using the ClickHouse integration.
 
 ## Development
 

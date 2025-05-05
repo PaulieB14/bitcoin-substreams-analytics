@@ -1,0 +1,107 @@
+# Substreams Sink Configuration for ClickHouse
+# This configuration connects the Bitcoin UTXO Substreams to ClickHouse
+
+sink:
+  type: sql
+  dsn: clickhouse://user:password@localhost:9000/default
+  schema: clickhouse_schema.sql
+  
+  # Batch configuration
+  batch_size: 100
+  batch_timeout_ms: 5000
+  
+  # Mapping configuration
+  tables:
+    # UTXO table mapping
+    - name: bitcoin_utxos
+      module: map_utxos
+      columns:
+        - name: tx_id
+          type: String
+          value: utxo.tx_id
+        - name: vout_index
+          type: UInt32
+          value: utxo.vout_index
+        - name: value
+          type: UInt64
+          value: utxo.value
+        - name: script_type
+          type: String
+          value: utxo.script_type
+        - name: address
+          type: String
+          value: utxo.address
+        - name: block_height
+          type: UInt64
+          value: utxo.block_height
+        - name: block_time
+          type: DateTime64(3)
+          value: "toDateTime(utxo.block_time)"
+        - name: is_spent
+          type: UInt8
+          value: "0"  # Default to unspent
+        - name: spent_in_tx_id
+          type: String
+          value: "''"  # Default to empty string
+        - name: spent_at_block_height
+          type: UInt64
+          value: "0"  # Default to 0
+        - name: spent_at_block_time
+          type: DateTime64(3)
+          value: "'1970-01-01 00:00:00.000'"  # Default to epoch
+      
+      # Primary key for updates
+      primary_key:
+        - tx_id
+        - vout_index
+      
+      # Conflict resolution strategy
+      on_conflict: update
+    
+    # Transaction table mapping
+    - name: bitcoin_transactions
+      module: map_block_metrics
+      columns:
+        - name: tx_id
+          type: String
+          value: "block.hash"  # This would need to be adjusted for actual transaction data
+        - name: block_height
+          type: UInt64
+          value: block.number
+        - name: block_time
+          type: DateTime64(3)
+          value: "toDateTime(block.timestamp)"
+        - name: fee
+          type: UInt64
+          value: block.total_fees
+        - name: input_count
+          type: UInt32
+          value: "0"  # This would need to be adjusted for actual transaction data
+        - name: output_count
+          type: UInt32
+          value: "0"  # This would need to be adjusted for actual transaction data
+        - name: total_input_value
+          type: UInt64
+          value: "0"  # This would need to be adjusted for actual transaction data
+        - name: total_output_value
+          type: UInt64
+          value: "0"  # This would need to be adjusted for actual transaction data
+      
+      # Primary key for updates
+      primary_key:
+        - tx_id
+        - block_height
+      
+      # Conflict resolution strategy
+      on_conflict: update
+
+# Connection retry configuration
+retry:
+  max_attempts: 10
+  initial_backoff_ms: 1000
+  max_backoff_ms: 30000
+
+# Logging configuration
+logging:
+  level: info
+  format: json

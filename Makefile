@@ -1,4 +1,5 @@
 ENDPOINT ?= bitcoin.substreams.pinax.network:443
+MODULE ?= map_block_metrics
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Include environment variables from .env.local if it exists
@@ -21,11 +22,11 @@ pack: build
 
 .PHONY: run
 run: build
-	substreams run -e $(ENDPOINT) substreams.yaml map_block_metrics -s 800000 -t +10
+	substreams run -e $(ENDPOINT) substreams.yaml $(MODULE) -s 800000 -t +10
 
 .PHONY: gui
 gui: build
-	substreams gui -e $(ENDPOINT) substreams.yaml map_block_metrics -s 800000 -t +10 --limit-processed-blocks 0
+	substreams gui -e $(ENDPOINT) substreams.yaml $(MODULE) -s 800000 -t +10 --limit-processed-blocks 0
 
 .PHONY: info
 info:

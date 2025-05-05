@@ -11,6 +11,7 @@ imports:
 protobuf:
   files:
     - proto/analytics.proto
+    - proto/utxo.proto
   importPaths:
     - ./proto
 
@@ -27,3 +28,11 @@ modules:
       - source: sf.bitcoin.type.v1.Block
     output:
       type: proto:bitcoin.analytics.v1.BlockMetricsRecord
+
+  - name: map_utxos
+    kind: map
+    initialBlock: 0
+    inputs:
+      - source: sf.bitcoin.type.v1.Block
+    output:
+      type: proto:bitcoin.utxo.v1.UTXORecords
