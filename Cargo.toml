@@ -8,12 +8,10 @@ name = "substreams_bitcoin_analytics"
 crate-type = ["cdylib"]
 
 [dependencies]
-prost = "0.13"
-prost-types = "0.13"
-substreams = "0.6"
-substreams-bitcoin = "2.0.0"
+prost = "0.11.9"
+prost-types = "0.11.9"
+substreams = "0.5.22"
+substreams-bitcoin = "1.0.0"
 hex = "0.4"
 chrono = "0.4"
-
-[build-dependencies]
-prost-build = "0.13"
+# Removed wasm-bindgen as it's causing compatibility issues
