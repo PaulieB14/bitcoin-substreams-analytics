@@ -21,12 +21,25 @@ pack: build
 
 .PHONY: run
 run: build
-	SUBSTREAMS_API_TOKEN=$(SUBSTREAMS_API_TOKEN) substreams run -e $(ENDPOINT) substreams.yaml map_block_metrics -s 800000 -t +10
+	substreams run -e $(ENDPOINT) substreams.yaml map_block_metrics -s 800000 -t +10
 
 .PHONY: gui
 gui: build
-	SUBSTREAMS_API_TOKEN=$(SUBSTREAMS_API_TOKEN) substreams gui -e $(ENDPOINT) substreams.yaml map_block_metrics -s 800000 -t +10 --limit-processed-blocks 0
+	substreams gui -e $(ENDPOINT) substreams.yaml map_block_metrics -s 800000 -t +10 --limit-processed-blocks 0
 
-.PHONY: block_metrics
-block_metrics: build
-	SUBSTREAMS_API_TOKEN=$(SUBSTREAMS_API_TOKEN) substreams gui -e $(ENDPOINT) substreams.yaml map_block_metrics -s 800000 -t +10
+.PHONY: info
+info:
+	substreams info substreams.yaml
+
+.PHONY: codegen
+codegen: protogen
+	cargo build
+
+.PHONY: test
+test:
+	cargo test -- --nocapture
+
+.PHONY: clean
+clean:
+	cargo clean
+	rm -rf ./src/pb/bitcoin

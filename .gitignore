@@ -2,6 +2,8 @@
 /target/
 target/
 *.wasm
+Cargo.lock
+**/*.rs.bk
 
 # macOS metadata files
 ._*
@@ -10,9 +12,21 @@ target/
 # ENV files and other local configuration
 *.env
 *.local
+.env*
 
 # Generated files
 /src/pb/bitcoin/
+/src/pb/**/*.rs
 
 # Substreams
 *.spkg
+*.bin
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log

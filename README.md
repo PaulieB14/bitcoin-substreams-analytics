@@ -8,7 +8,7 @@ This project provides a basic solution for Bitcoin blockchain analytics, focusin
 
 - Extraction of key metrics from Bitcoin blocks
 - Processing using Substreams technology
-- Optional integration with ClickHouse for analytics
+- Simple and clean implementation following best practices
 
 ## Project Structure
 
@@ -27,6 +27,7 @@ bitcoin-substreams-analytics/
 │       └── block.rs            # Block data extraction
 ├── substreams.yaml             # Substreams manifest
 ├── simple-substreams.yaml      # Simplified Substreams manifest
+├── build.rs                    # Build script for protobuf generation
 ├── Cargo.toml                  # Rust package definition
 ├── Makefile                    # Build and run commands
 └── README.md                   # This file
@@ -48,17 +49,12 @@ bitcoin-substreams-analytics/
    cd bitcoin-substreams-analytics
    ```
 
-2. Generate Protocol Buffer code:
-   ```sh
-   make protogen
-   ```
-
-3. Build the Substreams module:
+2. Build the project (this will automatically generate Protocol Buffer code):
    ```sh
    make build
    ```
 
-4. Package the Substreams module:
+3. Package the Substreams module:
    ```sh
    make pack
    ```
@@ -76,9 +72,9 @@ bitcoin-substreams-analytics/
    make gui
    ```
 
-Or run specific modules:
+3. Get information about the Substreams package:
    ```sh
-   make block_metrics
+   make info
    ```
 
 ## Data Models
@@ -97,6 +93,15 @@ The system extracts the following data from Bitcoin blocks:
 
 ## Development
 
+### Protobuf Generation
+
+This project uses `substreams-protogen` to automatically generate Rust code from Protocol Buffer definitions. The generation happens during the build process via the `build.rs` script.
+
+To manually regenerate the Protocol Buffer code:
+```sh
+make protogen
+```
+
 ### Creating Custom Modules
 
 To create your own custom Bitcoin Substreams modules:
@@ -109,9 +114,15 @@ To create your own custom Bitcoin Substreams modules:
 ### Testing
 
 Run tests with:
-
 ```sh
-cargo test
+make test
+```
+
+### Cleaning
+
+To clean the build artifacts:
+```sh
+make clean
 ```
 
 ## License
