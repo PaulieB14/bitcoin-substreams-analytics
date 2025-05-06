@@ -29,6 +29,14 @@ bitcoin-substreams-analytics/
 │       ├── mod.rs              # Module definitions
 │       ├── block.rs            # Block data extraction
 │       └── utxo.rs             # UTXO tracking implementation
+├── clickhouse-bitcoin/         # Modular ClickHouse integration
+│   ├── src/                    # ClickHouse-specific Rust code
+│   ├── schema.sql              # ClickHouse schema definition
+│   ├── sink_config.yaml        # ClickHouse sink configuration
+│   ├── substreams.yaml         # ClickHouse-specific Substreams manifest
+│   ├── Cargo.toml              # ClickHouse-specific dependencies
+│   ├── Makefile                # ClickHouse-specific build commands
+│   └── README.md               # ClickHouse integration documentation
 ├── substreams.yaml             # Substreams manifest
 ├── simple-substreams.yaml      # Simplified Substreams manifest
 ├── build.rs                    # Build script for protobuf generation
@@ -86,6 +94,10 @@ bitcoin-substreams-analytics/
 
 ### Setting Up ClickHouse Integration
 
+There are two ways to use ClickHouse with this project:
+
+#### Option 1: Using the main project's ClickHouse integration
+
 1. Install ClickHouse:
    ```sh
    # For Docker
@@ -113,6 +125,27 @@ bitcoin-substreams-analytics/
      map_utxos
    ```
 
+#### Option 2: Using the modular clickhouse-bitcoin integration
+
+The `clickhouse-bitcoin` directory contains a modular implementation of the ClickHouse integration that can be used independently:
+
+1. Navigate to the clickhouse-bitcoin directory:
+   ```sh
+   cd clickhouse-bitcoin
+   ```
+
+2. Set up the ClickHouse schema:
+   ```sh
+   make setup
+   ```
+
+3. Run the integration:
+   ```sh
+   make run
+   ```
+
+For more detailed instructions on either approach, see the `CLICKHOUSE_SETUP.md` file or the `clickhouse-bitcoin/README.md` file.
+
 4. Query token balances:
    ```sql
    -- Example: Get top 10 addresses by balance
@@ -121,8 +154,6 @@ bitcoin-substreams-analytics/
    ORDER BY balance DESC
    LIMIT 10;
    ```
-
-For more detailed instructions, see the `CLICKHOUSE_SETUP.md` file.
 
 ## Data Models
 
@@ -156,7 +187,12 @@ The project includes a comprehensive ClickHouse schema for:
 - Maintaining address transaction history
 - Generating rich lists and statistics
 
-See the `CLICKHOUSE_SETUP.md` file for detailed information on setting up and using the ClickHouse integration.
+There are two implementations of the ClickHouse integration:
+
+1. **Main project integration**: Uses the files in the root directory (`clickhouse_schema.sql`, `sink_config.yaml`, etc.)
+2. **Modular integration**: Located in the `clickhouse-bitcoin` directory, this is a more modular implementation that can be used independently
+
+See the `CLICKHOUSE_SETUP.md` file for detailed information on the main integration, or the `clickhouse-bitcoin/README.md` file for information on the modular integration.
 
 ## Development
 
